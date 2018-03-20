@@ -43,8 +43,8 @@ struct Vec {
 struct Face {
 	int a, b, c, d;
 
-	explict Face(int a = 0, int b = 0, int c = 0, int d = 0) : a(a), b(b), c(c), d(d) {}
-}
+	explicit Face(int a = 0, int b = 0, int c = 0, int d = 0) : a(a), b(b), c(c), d(d) {}
+};
 
 double clamp(double x) {
     return x < 0 ? 0 : x > 1 ? 1 : x;
@@ -56,15 +56,17 @@ int toInt(double x) {
 
 void ReadObj() {
     Vec vertex[1000];
+    Face faces[1000];
     int vertex_index = 0 , faces_index = 0;
     char line[100];
     char sep[] = " \n";
-
+    char *point;
+    
     FILE *read_obj = fopen("scene01.obj", "r");
     if(!read_obj)
         cout << "FILE NOT OPEN!" << endl;
 
-    for (int i = 0; i < 10000; ++i) {
+    for (int i = 0; i < 1000; ++i) {
         if(!fgets(line, 100, read_obj)) {
             cout << i << endl;
             break;
@@ -77,8 +79,15 @@ void ReadObj() {
             vertex_index++;
         }
 
-        if (line[0] == 'f') {
+        else if (line[0] == 'f') {
             strtok(line, sep);
+            faces[faces_index].a = atof(strtok(nullptr, sep)) - 1;
+            faces[faces_index].b = atof(strtok(nullptr, sep)) - 1;
+            faces[faces_index].c = atof(strtok(nullptr, sep)) - 1;
+            point = strtok(nullptr, sep);
+            if (point)
+                faces[faces_index].d = atof(point) - 1;
+            faces_index++;
         }
     }
     fclose(read_obj);
