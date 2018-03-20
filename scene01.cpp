@@ -40,10 +40,29 @@ struct Vec {
     }
 };
 
-struct Face {
-	int a, b, c, d;
+struct Ray {
+    Vec origin, direction;
 
-	explicit Face(int a = 0, int b = 0, int c = 0, int d = 0) : a(a), b(b), c(c), d(d) {}
+    Ray(const Vec &origin, const Vec &direction) : origin(origin), direction(direction) {}
+};
+
+enum Reflection_Type {
+    DIFF,
+    SPEC,
+    REFR
+};
+struct Face {
+	Vec a, b, c, d, n, color, emission;
+    Reflection_Type reflection_type;
+
+	explicit Face(const Vec &a, const Vec &b, const Vec &c, const Vec &d, const Vec &n,
+                  const Vec &color, const Vec &emission, Reflection_Type reflection_type) :
+            a(a), b(b), c(c), d(d), n(n),
+            color(color), emission(emission), reflection_type(reflection_type) {}
+
+    double intersect(const Ray &ray) const {
+
+    }
 };
 
 double clamp(double x) {
@@ -53,15 +72,16 @@ double clamp(double x) {
 int toInt(double x) {
     return int(pow(clamp(x), 1 / 2.2) * 255 + 0.5);
 }
+static Vec vertex[1000];
+static Face faces[1000];
 
 void ReadObj() {
-    Vec vertex[1000];
-    Face faces[1000];
-    int vertex_index = 0 , faces_index = 0;
+    Vec vertex_normal[1000];
+    int vertex_index = 0 , faces_index = 0, normal_index = 0;
     char line[100];
     char sep[] = " \n";
     char *point;
-    
+
     FILE *read_obj = fopen("scene01.obj", "r");
     if(!read_obj)
         cout << "FILE NOT OPEN!" << endl;
@@ -71,28 +91,37 @@ void ReadObj() {
             cout << i << endl;
             break;
         }
-        if (line[0] == 'v' & line[1] == ' ') {
-            strtok(line, sep);
-            vertex[vertex_index].x = atof(strtok(nullptr, sep));
-            vertex[vertex_index].y = atof(strtok(nullptr, sep));
-            vertex[vertex_index].z = atof(strtok(nullptr, sep));
-            vertex_index++;
+        if (line[0] == 'v') {
+            if (line[1] == ' '){
+                strtok(line, sep);
+                vertex[vertex_index].x = atof(strtok(nullptr, sep));
+                vertex[vertex_index].y = atof(strtok(nullptr, sep));
+                vertex[vertex_index].z = atof(strtok(nullptr, sep));
+                vertex_index++;
+            }
+            else if (line[1] == 'n') {
+                strtok(line, sep);
+                vertex_normal[normal_index].x = atof(strtok(nullptr, sep));
+                vertex_normal[normal_index].y = atof(strtok(nullptr, sep));
+                vertex_normal[normal_index].z = atof(strtok(nullptr, sep));
+            }
         }
 
         else if (line[0] == 'f') {
             strtok(line, sep);
-            faces[faces_index].a = atof(strtok(nullptr, sep)) - 1;
-            faces[faces_index].b = atof(strtok(nullptr, sep)) - 1;
-            faces[faces_index].c = atof(strtok(nullptr, sep)) - 1;
-            point = strtok(nullptr, sep);
-            if (point)
-                faces[faces_index].d = atof(point) - 1;
+            faces[faces_index].a = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
+            faces[faces_index].b = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
+            faces[faces_index].c = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
+            faces[faces_index].d = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
             faces_index++;
         }
     }
+    for (int i = 0; i < 11; i ++){
+        cout << faces[i].a << " " << faces[i].b << " " << faces[i].c << " " << faces[i].d << endl;
+    }
+
     fclose(read_obj);
 }
-
 
 int main(int argc, char *argv[]) {
 
