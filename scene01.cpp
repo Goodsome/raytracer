@@ -9,7 +9,9 @@ using namespace std;
 struct Vec {
     double x, y, z;
 
-    explicit Vec(double x = 0, double y =0, double z = 0) : x(x), y(y), z(z) {}
+    static const Vec Zero;
+
+    explicit Vec(double x = 0, double y = 0, double z = 0) : x(x), y(x), z(x) {}
 
     Vec operator+(const Vec &b) const {
         return Vec(x + b.x, y + b.y, z + b.z);
@@ -40,6 +42,8 @@ struct Vec {
     }
 };
 
+const Vec Vec::Zero(0, 0, 0);
+
 struct Ray {
     Vec origin, direction;
 
@@ -55,14 +59,13 @@ struct Face {
 	Vec a, b, c, d, n, color, emission;
     Reflection_Type reflection_type;
 
-	explicit Face(const Vec &a, const Vec &b, const Vec &c, const Vec &d, const Vec &n,
-                  const Vec &color, const Vec &emission, Reflection_Type reflection_type) :
+	explicit Face(const Vec &a = Vec::Zero, const Vec &b = Vec::Zero, const Vec &c = Vec::Zero, const Vec &d = Vec::Zero, const Vec &n = Vec::Zero,
+                  const Vec &color = Vec::Zero, const Vec &emission = Vec::Zero, Reflection_Type reflection_type = DIFF) :
             a(a), b(b), c(c), d(d), n(n),
             color(color), emission(emission), reflection_type(reflection_type) {}
 
-    double intersect(const Ray &ray) const {
-
-    }
+    double intersect(const Ray &ray); 
+    
 };
 
 double clamp(double x) {
@@ -72,8 +75,9 @@ double clamp(double x) {
 int toInt(double x) {
     return int(pow(clamp(x), 1 / 2.2) * 255 + 0.5);
 }
+
 static Vec vertex[1000];
-static Face faces[1000];
+static Face faces[11];
 
 void ReadObj() {
     Vec vertex_normal[1000];
@@ -81,6 +85,7 @@ void ReadObj() {
     char line[100];
     char sep[] = " \n";
     char *point;
+    double a, b, c, d;
 
     FILE *read_obj = fopen("scene01.obj", "r");
     if(!read_obj)
@@ -106,20 +111,18 @@ void ReadObj() {
                 vertex_normal[normal_index].z = atof(strtok(nullptr, sep));
             }
         }
-
         else if (line[0] == 'f') {
             strtok(line, sep);
-            faces[faces_index].a = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
-            faces[faces_index].b = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
-            faces[faces_index].c = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
-            faces[faces_index].d = static_cast<int>(atof(strtok(nullptr, sep)) - 1);
+            a = atof(strtok(nullptr, sep)) - 1;
+            b = atof(strtok(nullptr, sep)) - 1;
+            c = atof(strtok(nullptr, sep)) - 1;
+            d = atof(strtok(nullptr, sep)) - 1;
+            cout << a << endl;
+            faces[faces_index] = Face(vertex[(int)a], vertex[(int)b], vertex[(int)c], vertex[(int)d], Vec(5, 5, 5), Vec(1, 1, 1), Vec(.5, .5, .5), DIFF);
+            cout << faces[faces_index].a.y << endl;
             faces_index++;
         }
     }
-    for (int i = 0; i < 11; i ++){
-        cout << faces[i].a << " " << faces[i].b << " " << faces[i].c << " " << faces[i].d << endl;
-    }
-
     fclose(read_obj);
 }
 
