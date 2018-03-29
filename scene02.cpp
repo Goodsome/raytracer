@@ -57,6 +57,10 @@ struct Vec {
     double max() const {
         return x > y && y > z ? x : y > z ? y : z;
     }
+
+    void show() {
+        cout << x << " " << y << " " << z << endl;
+    }
 };
 
 // Ray结构 表示射线的原点和方向,方向为单位向量。
@@ -68,47 +72,46 @@ struct Ray {
 
 // Mtl结构 定义材质属性
 struct Mtl {
-    Vec Kd, Ka, Tf, Ks;
-    double Ni;
+    Vec Kd, Ka, Ks;
+    double ns;
 
-    Mtl (const Vec &Kd = Vec(), const Vec &Ka = Vec(), const Vec &Tf = Vec(), double Ni = 0, const Vec &Ks = Vec()) :
-            Kd(Kd), Ka(Ka), Tf(Tf), Ni(Ni), Ks(Ks) {}
+    Mtl (const Vec &Kd = Vec(), const Vec &Ka = Vec(), const Vec &Ks = Vec(), double ns = 0) :
+            Kd(Kd), Ka(Ka), Ks(Ks), ns(ns) {}
 };
 
-//                  漫反射                   环境光照             滤光透射率          折射率        镜面反射
-static Mtl blinn1SG{// 玻璃球
-        Mtl (Vec(1.00, 1.00, 1.00), Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), 1.80, Vec(0.00, 0.00, 0.00))
+//                  漫反射                   环境光照               镜面光           光滑度
+static Mtl initialShadingGroup{// 背景墙面
+        Mtl (Vec(0.50, 0.50, 0.50), Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), 1)
 };
-static Mtl blinn2SG{// 光源
-        Mtl (Vec(0.80, 0.80, 0.80), Vec(10.0, 10.0, 10.0), Vec(1.00, 1.00, 1.00), 1.00, Vec(0.50, 0.50, 0.50))
+static Mtl lambert2SG{// 光球
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(5.00, 5.00, 5.00), Vec(0.00, 0.00, 0.00), 1)
 };
-static Mtl initialShadingGroup{// 上后下墙面
-        Mtl (Vec(0.50, 0.50, 0.50), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1.00, Vec(0.00, 0.00, 0.00))
+
+// 高光板由上到下
+static Mtl mia_material_x_passes1SG{
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 4000)
 };
-static Mtl lambert2SG{// 左墙面
-        Mtl (Vec(1.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1.00, Vec(0.00, 0.00, 0.00))
+static Mtl mia_material_x_passes2SG{
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 2000)
 };
-static Mtl lambert3SG{// 右墙面
-        Mtl (Vec(0.00, 0.01, 1.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1.00, Vec(0.00, 0.00, 0.00))
+static Mtl mia_material_x_passes3SG{
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1000)
 };
-static Mtl mia{// 镜面球
-        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), 1.00, Vec(1.00, 1.00, 1.00))
+static Mtl mia_material_x_passes4SG{
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 100)
 };
 
 Mtl mtl(const char material[20]) {
-    if (strcmp(material, "blinn1SG") == 0)
-        return blinn1SG;
-    else if (strcmp(material, "blinn2SG") == 0)
-        return blinn2SG;
-    else if (strcmp(material, "initialShadingGroup") == 0) {
+    if (strcmp(material, "initialShadingGroup") == 0)
         return initialShadingGroup;
-    }
-    else if (strcmp(material, "lambert2SG") == 0)
-        return lambert2SG;
-    else if (strcmp(material, "lambert3SG") == 0)
-        return lambert3SG;
-    else
-        return mia;
+    else if (strcmp(material, "mia_material_x_passes1SG") == 0)
+        return mia_material_x_passes1SG;
+    else if (strcmp(material, "mia_material_x_passes2SG") == 0)
+        return mia_material_x_passes2SG;
+    else if (strcmp(material, "mia_material_x_passes3SG") == 0)
+        return mia_material_x_passes3SG;
+    else if (strcmp(material, "mia_material_x_passes4SG") == 0)
+        return mia_material_x_passes4SG;
 }
 
 // 判断点p是否在三角形abc内
@@ -167,11 +170,14 @@ struct Sphere {
 };
 
 static Sphere spheres[] = {
-        Sphere(1.5, Vec(-2.243, 1.5, -1.642), mia),         // 镜面球
-        Sphere(1.5, Vec( 2.425, 1.5,  1.843), blinn1SG)     // 玻璃球
+        // 光源 由左到右
+        Sphere(0.113, Vec(-3.36951, 6.43046, 3.03575), lambert2SG),
+        Sphere(0.331, Vec(-0.01048, 6.43046, 3.03575), lambert2SG),
+        Sphere(0.600, Vec( 3.63440, 6.43046, 3.03575), lambert2SG),
+        Sphere(0.890, Vec( 7.10389, 6.43046, 3.03575), lambert2SG),
 };
 
-static Face faces[11];
+static Face faces[26];
 
 // 计算光线与哪个面相交。
 inline bool intersect(const Ray &ray, double &t, Mtl &material, Vec &vec, bool &isFace) {
@@ -221,71 +227,31 @@ static Vec radiance(const Ray &ray, int depth, unsigned short *xi) {
             Vec x = ray.origin + ray.direction * t;
             Vec n = isFace ? vec : (x - vec).normalization();
             Vec nl = n.dot(ray.direction) < 0 ? n : n * -1;
-            Ray reflectionRay(x, ray.direction - n * (2 * n.dot(ray.direction))); // 镜面反射光线
 
-            if (material.Ni != 1){              // 折射
-                bool into = n.dot(nl) > 0;      // 判断光线从玻璃里面还是外面射入
-                double n1 = 1;                  // 空气折射率
-                double n2 = material.Ni;        // 玻璃折射率
-                double nn = into ? n1 / n2 : n2 / n1;
-                double cost1 = ray.direction.dot(nl);
-                double cos2t2 = 1 - nn * nn * (1 - cost1 * cost1);
+            double r1 = 2 * M_PI * erand48(xi);
+            double r2 = erand48(xi);
+            double r2s = sqrt(r2);
 
-                if (cos2t2 < 0) {                // 发生全反射
-                    return material.Ka + material.Kd * radiance(reflectionRay, newDepth, xi);
-                }
-                else {
-                    Vec dir = (ray.direction * nn - n * (into ? 1 : -1) * (cost1 * nn + sqrt(cos2t2))).normalization();
-                    Ray refractionRay(x, dir);  // 折射光线
+            // 计算标准正交坐标系
+            Vec w = nl;
+            Vec wo = fabs(w.x) > .1 ? Vec(0, 1) : Vec(1);
+            Vec u = (wo.cross(w)).normalization();
+            Vec v = w.cross(u);
 
-                    // 菲涅耳方程
-                    double a = n2 - n1;
-                    double b = n2 + n1;
-                    double R0 = (a * a) / (b * b);                  // 法向反射率
-                    double c = 1 - (into ? -cost1 : dir.dot(n));
-                    double Re = R0 + (1 - R0) * pow(c, 5);          // 反射率
-                    double Tr = 1 - Re;
-                    double P = .25 + .5 * Re;
-                    double RP = Re / P;
-                    double TP = Tr / (1 - P);
+            // 在半球面内产生随机均匀分布的射线
+            Vec d = (u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2)).normalization();
+            Vec r = (u * cos(r1 + M_PI) * r2s + v * sin(r1 + M_PI) * r2s + w * sqrt(1 - r2)).normalization();
 
-                    Vec result;
-                    if (newDepth > 2) {// 一部分光反射，一部分光折射
-                        if (erand48(xi) < P)
-                            result = radiance(reflectionRay, newDepth, xi) * RP;
-                        else
-                            result = radiance(refractionRay, newDepth, xi) * TP;
-                    }
-                    else
-                        result = radiance(reflectionRay, newDepth, xi) * Re + radiance(refractionRay, newDepth, xi) * Tr;
+            Vec h = (d - ray.direction).normalization();
+            double nh = n.dot(h) > 0 ? n.dot(h) : 0;
+            double vr = (ray.direction * -1).dot(r) > 0 ? (ray.direction * -1).dot(r) : 0;
 
-                    return material.Ka + material.Kd * result;
-                }
-
-            }
-
-            else if (material.Kd.norm() != 0) {         // 漫反射
-
-                double r1 = 2 * M_PI * erand48(xi);
-                double r2 = erand48(xi);
-                double r2s = sqrt(r2);
-
-                // 计算标准正交坐标系
-                Vec w = nl;
-                Vec wo = fabs(w.x) > .1 ? Vec(0, 1) : Vec(1);
-                Vec u = (wo.cross(w)).normalization();
-                Vec v = w.cross(u);
-
-                // 在半球面内产生随机均匀分布的射线
-                Vec d = (u * cos(r1) * r2s + v * sin(r1) * r2s + w * sqrt(1 - r2)).normalization();
-                return material.Ka + material.Kd * radiance(Ray(x, d), newDepth, xi);
-            }
-            else // 镜面反射
-                return material.Ka + material.Ks * radiance(reflectionRay, newDepth, xi);
-            }
+            return material.Ka + (material.Kd + material.Ks * pow(nh, material.ns)) * radiance(Ray(x, d), newDepth, xi);
+        }
 
     }
 }
+
 inline double clamp(double x) {
     return x < 0 ? 0 : x > 1 ? 1 : x;
 }
@@ -297,13 +263,13 @@ inline int toInt(double x) {
 
 // 读取obj文件
 void ReadObj() {
-    Vec vertex[16];
+    Vec vertex[40];
     int vertex_index = 0 , faces_index = 0;
     char line[100];
     char sep[] = " \n";
     char *p, material[20];
 
-    FILE *read_obj = fopen("scene01.obj", "r");
+    FILE *read_obj = fopen("scene02.obj", "r");
     if(!read_obj)
         cout << "FILE NOT OPEN!" << endl;
 
@@ -339,10 +305,10 @@ void ReadObj() {
 int main(int argc, char *argv[]) {
 
     double start = omp_get_wtime();
-    const int width = 1024;
-    const int height = 768;
-    const int samples = argc == 2 ? atoi(argv[1]) : 10;
-    const Ray camera(Vec(0, 6, 30), Vec(0, -0.4, -10).normalization());     // 相机位置，视角
+    const int width = 800;
+    const int height = 600;
+    const int samples = argc == 2 ? atoi(argv[1]) : 100;
+    const Ray camera(Vec(0, 20, 40), Vec(0, -0.5, -1).normalization());     // 相机位置，视角
     const Vec cx(width * .5 / height);
     const Vec cy = (cx.cross(camera.direction)).normalization() * .5;
     auto *color = new Vec[width * height];
@@ -358,18 +324,21 @@ int main(int argc, char *argv[]) {
             const int i = (height - y - 1) *  width + x;
             Vec r = Vec();
 
-            double r1 = 2 * erand48(xi), dx = r1 < 2 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);     // x方向偏移
-            double r2 = 2 * erand48(xi), dy = r2 < 2 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);     // y方向偏移
-            Vec d = cx * (((.5 + dx) / 2 + x) / width - .5) +
-                    cy * (((.5 + dy) / 2 + y) / height - .5) + camera.direction;
+            for (int s = 0; s < samples; s++) {
+                double r1 = 2 * erand48(xi), dx = r1 < 2 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);     // x方向偏移
+                double r2 = 2 * erand48(xi), dy = r2 < 2 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);     // y方向偏移
+                Vec d = cx * (((.5 + dx) / 2 + x) / width - .5) +
+                        cy * (((.5 + dy) / 2 + y) / height - .5) + camera.direction;
 
-            r = r + radiance(Ray(camera.origin + d * 15, d.normalization()), 0, xi) * (1.0 / samples);
+                r = r + radiance(Ray(camera.origin + d * 15, d.normalization()), 0, xi) * (1.0 / samples);
+            }
+
             color[i] = color[i] + Vec(clamp(r.x), clamp(r.y), clamp(r.z));
         }
     }
-    cout << endl << (omp_get_wtime() - start) / 60 << "min" << endl;
+    cout << endl << (omp_get_wtime() - start) / 60 << " min" << endl;
 
-    FILE *draw_pixels = fopen("ppm/scene01.ppm", "w");
+    FILE *draw_pixels = fopen("ppm/scene02.ppm", "w");
     fprintf(draw_pixels, "P3\n%d %d \n%d\n", width, height, 255);
     for (int i = 0; i < width * height; i++)
         fprintf(draw_pixels, "%d %d %d\n", toInt(color[i].x), toInt(color[i].y), toInt(color[i].z));
