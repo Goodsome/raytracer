@@ -339,9 +339,9 @@ void ReadObj() {
 int main(int argc, char *argv[]) {
 
     double start = omp_get_wtime();
-    const int width = 1024;
-    const int height = 768;
-    const int samples = argc == 2 ? atoi(argv[1]) : 10;
+    const int width = 800;
+    const int height = 600;
+    const int samples = argc == 2 ? atoi(argv[1]) : 4000;
     const Ray camera(Vec(0, 6, 30), Vec(0, -0.4, -10).normalization());     // 相机位置，视角
     const Vec cx(width * .5 / height);
     const Vec cy = (cx.cross(camera.direction)).normalization() * .5;
@@ -358,12 +358,14 @@ int main(int argc, char *argv[]) {
             const int i = (height - y - 1) *  width + x;
             Vec r = Vec();
 
-            double r1 = 2 * erand48(xi), dx = r1 < 2 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);     // x方向偏移
-            double r2 = 2 * erand48(xi), dy = r2 < 2 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);     // y方向偏移
-            Vec d = cx * (((.5 + dx) / 2 + x) / width - .5) +
-                    cy * (((.5 + dy) / 2 + y) / height - .5) + camera.direction;
+            for (int s = 0; s < samples; s++){
+                double r1 = 2 * erand48(xi), dx = r1 < 2 ? sqrt(r1) - 1 : 1 - sqrt(2 - r1);     // x方向偏移
+                double r2 = 2 * erand48(xi), dy = r2 < 2 ? sqrt(r2) - 1 : 1 - sqrt(2 - r2);     // y方向偏移
+                Vec d = cx * (((.5 + dx) / 2 + x) / width - .5) +
+                        cy * (((.5 + dy) / 2 + y) / height - .5) + camera.direction;
 
-            r = r + radiance(Ray(camera.origin + d * 15, d.normalization()), 0, xi) * (1.0 / samples);
+                r = r + radiance(Ray(camera.origin + d * 15, d.normalization()), 0, xi) * (1.0 / samples);
+            }
             color[i] = color[i] + Vec(clamp(r.x), clamp(r.y), clamp(r.z));
         }
     }
