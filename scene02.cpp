@@ -84,7 +84,7 @@ static Mtl initialShadingGroup{// 背景墙面
         Mtl (Vec(0.50, 0.50, 0.50), Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), 1)
 };
 static Mtl lambert2SG{// 光球
-        Mtl (Vec(0.00, 0.00, 0.00), Vec(5.00, 5.00, 5.00), Vec(0.00, 0.00, 0.00), 1)
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(10.0, 10.0, 10.0), Vec(0.00, 0.00, 0.00), 1)
 };
 
 // 高光板由上到下
@@ -92,10 +92,10 @@ static Mtl mia_material_x_passes1SG{
         Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 4000)
 };
 static Mtl mia_material_x_passes2SG{
-        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 2000)
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1500)
 };
 static Mtl mia_material_x_passes3SG{
-        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 1000)
+        Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 500)
 };
 static Mtl mia_material_x_passes4SG{
         Mtl (Vec(0.00, 0.00, 0.00), Vec(0.00, 0.00, 0.00), Vec(1.00, 1.00, 1.00), 100)
@@ -243,8 +243,7 @@ static Vec radiance(const Ray &ray, int depth, unsigned short *xi) {
             Vec r = (u * cos(r1 + M_PI) * r2s + v * sin(r1 + M_PI) * r2s + w * sqrt(1 - r2)).normalization();
 
             Vec h = (d - ray.direction).normalization();
-            double nh = n.dot(h) > 0 ? n.dot(h) : 0;
-            double vr = (ray.direction * -1).dot(r) > 0 ? (ray.direction * -1).dot(r) : 0;
+            double nh = nl.dot(h) > 0 ? nl.dot(h) : 0;
 
             return material.Ka + (material.Kd + material.Ks * pow(nh, material.ns)) * radiance(Ray(x, d), newDepth, xi);
         }
